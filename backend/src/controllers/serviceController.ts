@@ -1,7 +1,22 @@
 import { Request, Response } from 'express';
+import { Readable } from 'stream';
 import { Service } from '../models/Service';
 import { Booking } from '../models/Booking';
 import { AppError } from '../errors/AppError';
+import cloudinary from '../config/cloudinary';
+
+const uploadToCloudinary = (buffer: Buffer): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'events-booking' },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result!.secure_url);
+      }
+    );
+    Readable.from(buffer).pipe(stream);
+  });
+};
 
 // Get all services
 export const getServices = async (req: Request, res: Response) => {
@@ -47,7 +62,7 @@ export const createService = async (req: Request, res: Response) => {
     const serviceData = { ...req.body, adminId };
     
     if (req.file) {
-      serviceData.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+      serviceData.imageUrl = await uploadToCloudinary(req.file.buffer);
     }
 
     const service = await Service.create(serviceData);
@@ -65,7 +80,7 @@ export const updateService = async (req: Request, res: Response) => {
 
     const updateData = { ...req.body };
     if (req.file) {
-      updateData.imageUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+      updateData.imageUrl = await uploadToCloudinary(req.file.buffer);
     }
 
     const service = await Service.findOneAndUpdate(
