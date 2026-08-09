@@ -13,7 +13,7 @@ const Bookings: React.FC = () => {
       setLoading(true);
       try {
         const token = Cookies.get('accessToken');
-        const response = await axios.get('http://localhost:5000/api/services/bookings', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/services/bookings`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { page, limit: 5 }
         });

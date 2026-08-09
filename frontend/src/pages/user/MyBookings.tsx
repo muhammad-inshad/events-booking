@@ -11,7 +11,7 @@ const MyBookings: React.FC = () => {
     const fetchBookings = async () => {
       try {
         const token = Cookies.get('accessToken');
-        const response = await axios.get('http://localhost:5000/api/user/bookings', {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/bookings`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setBookings(response.data.data);

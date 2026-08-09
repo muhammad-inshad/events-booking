@@ -15,7 +15,7 @@ const ServiceManagement: React.FC = () => {
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/services', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/services`, {
         params: { keyword, category, page, limit: 5 }
       });
       setServices(response.data.data);
@@ -39,7 +39,7 @@ const ServiceManagement: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this service?')) {
       try {
         const token = Cookies.get('accessToken');
-        await axios.delete(`http://localhost:5000/api/services/${id}`, {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/services/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         fetchServices();

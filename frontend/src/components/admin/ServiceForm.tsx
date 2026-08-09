@@ -43,9 +43,9 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
       }
 
       if (initialData) {
-        await axios.put(`http://localhost:5000/api/services/${initialData._id}`, payload, { headers });
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/services/${initialData._id}`, payload, { headers });
       } else {
-        await axios.post('http://localhost:5000/api/services', payload, { headers });
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/services`, payload, { headers });
       }
       onSuccess();
     } catch (err: any) {

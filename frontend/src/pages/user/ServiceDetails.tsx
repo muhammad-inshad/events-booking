@@ -21,7 +21,7 @@ const ServiceDetails: React.FC = () => {
   useEffect(() => {
     const fetchService = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/public/services/${id}`);
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/public/services/${id}`);
         setService(response.data.data);
       } catch (error) {
         console.error('Error fetching service:', error);
@@ -57,7 +57,7 @@ const ServiceDetails: React.FC = () => {
 
       const totalPrice = calculateTotalPrice(service.pricePerDay, startDate, endDate);
 
-      await axios.post('http://localhost:5000/api/user/bookings', {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/user/bookings`, {
         serviceId: service._id,
         startDate,
         endDate,

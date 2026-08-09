@@ -19,7 +19,7 @@ const Home: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/public/services', {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/public/services`, {
         params: { ...filters, page, limit: 12 }
       });
       setServices(response.data.data);
