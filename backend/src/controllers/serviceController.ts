@@ -22,7 +22,7 @@ const uploadToCloudinary = (buffer: Buffer): Promise<string> => {
 // Get all services
 export const getServices = async (req: Request, res: Response) => {
   try {
-    const { keyword, category } = req.query;
+    const { keyword, category, sort } = req.query;
     let query: any = {};
 
     if (keyword) {
@@ -37,8 +37,13 @@ export const getServices = async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 5;
     const skip = (page - 1) * limit;
 
+    let sortOption: any = { createdAt: -1 };
+    if (sort === 'price_asc') sortOption = { pricePerDay: 1 };
+    if (sort === 'price_desc') sortOption = { pricePerDay: -1 };
+    if (sort === 'oldest') sortOption = { createdAt: 1 };
+
     const total = await Service.countDocuments(query);
-    const services = await Service.find(query).skip(skip).limit(limit);
+    const services = await Service.find(query).sort(sortOption).skip(skip).limit(limit);
     
     res.status(HttpStatus.OK).json({ 
       status: 'success', 

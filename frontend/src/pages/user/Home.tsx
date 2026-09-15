@@ -16,7 +16,8 @@ const Home: React.FC = () => {
     category: '',
     location: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    sort: 'newest'
   });
 
   const fetchServices = async () => {
@@ -96,6 +97,14 @@ const Home: React.FC = () => {
               value={filters.location}
               onChange={(val) => setFilters({ ...filters, location: val })}
             />
+          </div>
+          <div className="filter-group">
+            <label className="filter-label">Sort By</label>
+            <select name="sort" value={filters.sort} onChange={handleChange} className="filter-input">
+              <option value="newest">Newest First</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+            </select>
           </div>
 
           <div className="filter-action">
