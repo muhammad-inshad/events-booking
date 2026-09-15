@@ -1,0 +1,200 @@
+openapi: 3.0.0
+info:
+  title: Events Booking API
+  description: Full API documentation for the VibeBook Events platform.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+    
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+    Service:
+      type: object
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        pricePerDay:
+          type: number
+        category:
+          type: string
+        location:
+          type: string
+    Booking:
+      type: object
+      properties:
+        _id:
+          type: string
+        serviceId:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalPrice:
+          type: number
+        guests:
+          type: number
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ---------------- AUTHENTICATION ---------------- #
+  /api/auth/login:
+    post:
+      summary: Login user
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          
+  /api/auth/register:
+    post:
+      summary: Register new user
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                isEventOwner:
+                  type: boolean
+      responses:
+        '201':
+          description: User registered successfully
+
+  # ---------------- PUBLIC ROUTES ---------------- #
+  /api/public/services:
+    get:
+      summary: Get all public services
+      tags: [Public]
+      security: []
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: sort
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of services
+          
+  /api/categories/public:
+    get:
+      summary: Get all categories
+      tags: [Public]
+      security: []
+      responses:
+        '200':
+          description: List of categories
+
+  # ---------------- USER ROUTES ---------------- #
+  /api/users/me:
+    get:
+      summary: Get current logged in user
+      tags: [Users]
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+                
+  /api/users/bookings:
+    get:
+      summary: Get my bookings
+      tags: [Users, Bookings]
+      responses:
+        '200':
+          description: List of the current user's bookings
+          
+    post:
+      summary: Create a new booking
+      tags: [Users, Bookings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serviceId:
+                  type: string
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                guests:
+                  type: number
+                totalPrice:
+                  type: number
+      responses:
+        '201':
+          description: Booking created successfully
+
+  # ---------------- PROVIDER / ADMIN ROUTES ---------------- #
+  /api/services:
+    get:
+      summary: Get my managed services
+      tags: [Provider]
+      responses:
+        '200':
+          description: List of services owned by the provider

@@ -6,6 +6,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler';
 import { AppError } from './errors/AppError';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const app: Application = express();
 
@@ -35,6 +37,9 @@ app.use('/api/public', publicRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
+
+const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(HttpStatus.OK).json({ success: true, message: 'Server is healthy' });
