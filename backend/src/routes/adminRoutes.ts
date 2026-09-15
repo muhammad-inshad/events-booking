@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { HttpStatus } from '../constants/httpStatus';
-import { createUserBooking, getUserBookings, getCurrentUser } from '../controllers/userController';
+import { getUsers, updateUserRole, toggleUserBlock } from '../controllers/adminController';
 import jwt from 'jsonwebtoken';
 
 const router = Router();
@@ -18,10 +18,18 @@ const authMiddleware = (req: any, res: any, next: any) => {
   }
 };
 
+const adminMiddleware = (req: any, res: any, next: any) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(HttpStatus.FORBIDDEN).json({ message: 'Admin access required' });
+  }
+  next();
+};
+
 router.use(authMiddleware);
+router.use(adminMiddleware);
 
-router.get('/me', getCurrentUser);
-router.post('/bookings', createUserBooking);
-router.get('/bookings', getUserBookings);
+router.get('/users', getUsers);
+router.put('/users/:id/role', updateUserRole);
+router.put('/users/:id/block', toggleUserBlock);
 
-export { router as userRoutes };
+export { router as adminRoutes };

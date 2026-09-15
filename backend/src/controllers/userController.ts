@@ -1,23 +1,24 @@
 import { Request, Response } from 'express';
+import { HttpStatus } from '../constants/httpStatus';
 import { Booking } from '../models/Booking';
 import { Service } from '../models/Service';
+import { UserModel } from '../models/User';
 import { AppError } from '../errors/AppError';
 
 export const createUserBooking = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    if (!userId) throw new AppError('Unauthorized', 401);
+    if (!userId) throw new AppError('Unauthorized', HttpStatus.UNAUTHORIZED);
 
-    const { serviceId, startDate, endDate, totalPrice } = req.body;
+    const { serviceId, startDate, endDate, totalPrice, guests } = req.body;
 
     const sDate = new Date(startDate);
     const eDate = new Date(endDate);
 
-    // Validate service exists
+    
     const service = await Service.findById(serviceId);
-    if (!service) throw new AppError('Service not found', 404);
+    if (!service) throw new AppError('Service not found', HttpStatus.NOT_FOUND);
 
-    // Check for overlapping bookings
     const overlapping = await Booking.findOne({
       serviceId,
       $or: [
@@ -26,7 +27,7 @@ export const createUserBooking = async (req: Request, res: Response) => {
     });
 
     if (overlapping) {
-      throw new AppError('Service is already booked for these dates', 400);
+      throw new AppError('Service is already booked for these dates', HttpStatus.BAD_REQUEST);
     }
 
     const booking = await Booking.create({
@@ -34,26 +35,41 @@ export const createUserBooking = async (req: Request, res: Response) => {
       serviceId,
       startDate: sDate,
       endDate: eDate,
-      totalPrice
+      totalPrice,
+      guests: guests || 1
     });
 
-    res.status(201).json({ status: 'success', data: booking });
+    res.status(HttpStatus.CREATED).json({ status: 'success', data: booking });
   } catch (error: any) {
-    res.status(400).json({ status: 'error', message: error.message });
+    res.status(HttpStatus.BAD_REQUEST).json({ status: 'error', message: error.message });
   }
 };
 
 export const getUserBookings = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    if (!userId) throw new AppError('Unauthorized', 401);
+    if (!userId) throw new AppError('Unauthorized', HttpStatus.UNAUTHORIZED);
 
     const bookings = await Booking.find({ userId })
       .populate('serviceId', 'title category location')
       .sort({ startDate: -1 });
 
-    res.status(200).json({ status: 'success', data: bookings });
+    res.status(HttpStatus.OK).json({ status: 'success', data: bookings });
   } catch (error: any) {
-    res.status(500).json({ status: 'error', message: error.message });
+    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ status: 'error', message: error.message });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) throw new AppError('Unauthorized', HttpStatus.UNAUTHORIZED);
+
+    const user = await UserModel.findById(userId).select('-password');
+    if (!user) throw new AppError('User not found', HttpStatus.NOT_FOUND);
+
+    res.status(HttpStatus.OK).json({ status: 'success', data: user });
+  } catch (error: any) {
+    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ status: 'error', message: error.message });
   }
 };

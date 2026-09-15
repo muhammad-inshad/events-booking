@@ -1,32 +1,33 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/axios';
 import './Auth.css';
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isEventOwner, setIsEventOwner] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
+      await api.post(`/api/auth/register`, {
         name,
         email,
-        password
+        password,
+        role: isEventOwner ? 'event_owner' : 'user'
       });
-
+      toast.success('Registration successful! Please login.');
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'An error occurred');
+      toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -39,8 +40,6 @@ const Register: React.FC = () => {
           <h1>Create Account</h1>
           <p>Join us to start booking events</p>
         </div>
-        
-        {error && <div className="auth-error" style={{ color: '#ff4d4f', backgroundColor: '#fff2f0', border: '1px solid #ffccc7', padding: '10px', borderRadius: '4px', marginBottom: '15px', textAlign: 'center', fontSize: '14px' }}>{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
@@ -89,6 +88,17 @@ const Register: React.FC = () => {
               />
               <Lock className="input-icon" />
             </div>
+          </div>
+          
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+            <input 
+              type="checkbox" 
+              id="eventOwner" 
+              checked={isEventOwner} 
+              onChange={(e) => setIsEventOwner(e.target.checked)} 
+              style={{ width: 'auto' }}
+            />
+            <label htmlFor="eventOwner" style={{ marginBottom: 0 }}>Register as an Event Provider</label>
           </div>
           
           <button type="submit" className="auth-button" disabled={loading}>

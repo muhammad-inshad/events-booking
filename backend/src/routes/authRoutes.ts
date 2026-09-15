@@ -7,5 +7,6 @@ const { authController } = authContainer();
 
 router.post('/login', authController.login);
 router.post('/register', authController.register);
+router.post('/refresh-token', authController.refreshToken);
 
 export { router as authRoutes };

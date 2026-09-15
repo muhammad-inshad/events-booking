@@ -1,7 +1,17 @@
 import { Request, Response } from 'express';
+import { HttpStatus } from '../constants/httpStatus';
 import { Service } from '../models/Service';
 import { Booking } from '../models/Booking';
 import { AppError } from '../errors/AppError';
+
+export const getServiceCategories = async (req: Request, res: Response) => {
+  try {
+    const categories = await Service.distinct('category');
+    res.status(HttpStatus.OK).json({ status: 'success', data: categories });
+  } catch (error: any) {
+    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ status: 'error', message: error.message });
+  }
+};
 
 export const getPublicServices = async (req: Request, res: Response) => {
   try {
@@ -46,7 +56,7 @@ export const getPublicServices = async (req: Request, res: Response) => {
       .skip(skip)
       .limit(limitNum);
 
-    res.status(200).json({
+    res.status(HttpStatus.OK).json({
       status: 'success',
       data: services,
       pagination: {
@@ -56,17 +66,17 @@ export const getPublicServices = async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({ status: 'error', message: error.message });
+    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ status: 'error', message: error.message });
   }
 };
 
 export const getPublicServiceById = async (req: Request, res: Response) => {
   try {
     const service = await Service.findById(req.params.id).select('-adminId -createdAt -updatedAt -__v');
-    if (!service) throw new AppError('Service not found', 404);
+    if (!service) throw new AppError('Service not found', HttpStatus.NOT_FOUND);
 
-    res.status(200).json({ status: 'success', data: service });
+    res.status(HttpStatus.OK).json({ status: 'success', data: service });
   } catch (error: any) {
-    res.status(404).json({ status: 'error', message: error.message });
+    res.status(HttpStatus.NOT_FOUND).json({ status: 'error', message: error.message });
   }
 };

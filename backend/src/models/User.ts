@@ -5,7 +5,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password?: string; // Optional because OAuth might not have a password
-  role: 'user' | 'admin';
+  role: 'user' | 'event_owner' | 'admin';
+  isBlocked: boolean;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -16,7 +17,8 @@ const UserSchema: Schema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: false, select: false },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['user', 'event_owner', 'admin'], default: 'user' },
+    isBlocked: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

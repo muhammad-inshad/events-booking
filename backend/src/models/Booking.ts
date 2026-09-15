@@ -6,6 +6,9 @@ export interface IBooking extends Document {
   startDate: Date;
   endDate: Date;
   totalPrice: number;
+  guests: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const bookingSchema = new Schema<IBooking>(
@@ -15,6 +18,7 @@ const bookingSchema = new Schema<IBooking>(
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     totalPrice: { type: Number, required: true },
+    guests: { type: Number, required: true, default: 1 },
   },
   { timestamps: true }
 );

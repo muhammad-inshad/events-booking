@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { HttpStatus } from '../constants/httpStatus';
 import { AppError } from '../errors/AppError';
 
 export const errorHandler = (
@@ -7,20 +8,20 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  let statusCode = 500;
+  let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
   let message = 'Internal Server Error';
   
   if (err instanceof AppError) {
     statusCode = err.statusCode;
     message = err.message;
   } else if (err.name === 'ValidationError') {
-    statusCode = 400;
+    statusCode = HttpStatus.BAD_REQUEST;
     message = err.message;
   } else if (err.name === 'JsonWebTokenError') {
-    statusCode = 401;
+    statusCode = HttpStatus.UNAUTHORIZED;
     message = 'Invalid token. Please log in again.';
   } else if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
+    statusCode = HttpStatus.UNAUTHORIZED;
     message = 'Your token has expired! Please log in again.';
   }
 

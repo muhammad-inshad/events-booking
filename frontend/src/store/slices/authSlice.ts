@@ -1,5 +1,6 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import Cookies from 'js-cookie';
+import api from '../../utils/axios';
 
 export interface User {
   _id: string;
@@ -11,13 +12,26 @@ export interface User {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
-const savedUser = localStorage.getItem('user');
 const initialState: AuthState = {
-  user: savedUser && savedUser !== 'undefined' ? JSON.parse(savedUser) : null,
+  user: null,
   isAuthenticated: !!Cookies.get('accessToken'),
+  status: 'idle',
 };
+
+export const fetchCurrentUser = createAsyncThunk(
+  'auth/fetchCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/api/user/me');
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
@@ -29,7 +43,7 @@ const authSlice = createSlice({
     ) => {
       state.user = action.payload.user;
       state.isAuthenticated = true;
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      state.status = 'succeeded';
       
       Cookies.set('accessToken', action.payload.accessToken, { expires: 1 });
       if (action.payload.refreshToken) {
@@ -39,10 +53,28 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('user');
+      state.status = 'idle';
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchCurrentUser.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(fetchCurrentUser.rejected, (state) => {
+        state.status = 'failed';
+        state.user = null;
+        state.isAuthenticated = false;
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+      });
   },
 });
 

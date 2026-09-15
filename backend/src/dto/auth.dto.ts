@@ -7,5 +7,5 @@ export interface RegisterDTO {
   name: string;
   email: string;
   password?: string;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'event_owner' | 'admin';
 }

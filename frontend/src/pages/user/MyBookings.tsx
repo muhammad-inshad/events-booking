@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import React, { useEffect, useState } from 'react';
+import api from '../../utils/axios';
 import { Link } from 'react-router-dom';
 
 const MyBookings: React.FC = () => {
@@ -10,10 +9,7 @@ const MyBookings: React.FC = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const token = Cookies.get('accessToken');
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/bookings`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get(`/api/user/bookings`);
         setBookings(response.data.data);
       } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -29,7 +25,7 @@ const MyBookings: React.FC = () => {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 24px' }}>
-      <h1 className="hero-title" style={{ fontSize: '2.5rem', textAlign: 'left', marginBottom: '32px' }}>My Bookings</h1>
+      <h1 style={{ fontSize: '2.5rem', textAlign: 'left', marginBottom: '32px', fontWeight: '800', color: 'var(--user-text)' }}>My Bookings</h1>
       
       {bookings.length === 0 ? (
         <div style={{ background: 'var(--user-card-bg)', padding: '40px', borderRadius: '16px', textAlign: 'center', border: '1px solid var(--user-border)' }}>
@@ -45,6 +41,7 @@ const MyBookings: React.FC = () => {
                 <th>Category</th>
                 <th>Location</th>
                 <th>Dates</th>
+                <th>Persons</th>
                 <th>Total Price</th>
                 <th>Status</th>
               </tr>
@@ -65,6 +62,7 @@ const MyBookings: React.FC = () => {
                       <div style={{ fontSize: '0.9rem' }}>{new Date(booking.startDate).toLocaleDateString()}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--user-text-muted)' }}>to {new Date(booking.endDate).toLocaleDateString()}</div>
                     </td>
+                    <td>{booking.guests || 1}</td>
                     <td style={{ fontWeight: 'bold', color: 'var(--user-primary)' }}>${booking.totalPrice}</td>
                     <td>
                       <span className={`status-badge ${isPast ? 'status-past' : 'status-upcoming'}`}>

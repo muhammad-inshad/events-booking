@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/axios';
+import toast from 'react-hot-toast';
+import MapLocationPicker from '../MapLocationPicker';
 
 interface ServiceFormProps {
   initialData?: any;
@@ -11,26 +12,44 @@ interface ServiceFormProps {
 const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
-    category: initialData?.category || 'venue',
+    category: initialData?.category || '',
     location: initialData?.location || '',
+    lat: initialData?.lat || 0,
+    lng: initialData?.lng || 0,
     pricePerDay: initialData?.pricePerDay || 0,
     description: initialData?.description || '',
     contactDetails: initialData?.contactDetails || '',
     imageUrl: initialData?.imageUrl || '',
+    startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
+    endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : '',
+    startTime: initialData?.startTime || '',
+    endTime: initialData?.endTime || '',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/api/categories');
+        setCategories(res.data.data);
+        if (!initialData?.category && res.data.data.length > 0) {
+          setFormData(prev => ({ ...prev, category: res.data.data[0].name }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
-      const token = Cookies.get('accessToken');
       let payload: any = formData;
-      const headers: any = { Authorization: `Bearer ${token}` };
 
       if (imageFile) {
         payload = new FormData();
@@ -43,13 +62,15 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
       }
 
       if (initialData) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/api/services/${initialData._id}`, payload, { headers });
+        await api.put(`/api/services/${initialData._id}`, payload);
+        toast.success('Service updated successfully');
       } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/api/services`, payload, { headers });
+        await api.post(`/api/services`, payload);
+        toast.success('Service created successfully');
       }
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'An error occurred');
+      toast.error(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -67,8 +88,6 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
           <button onClick={onClose} className="modal-close">&times;</button>
         </div>
 
-        {error && <div style={{ color: 'var(--danger)', marginBottom: '15px' }}>{error}</div>}
-
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label className="admin-label">Title</label>
@@ -77,15 +96,18 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
           <div>
             <label className="admin-label">Category</label>
             <select name="category" value={formData.category} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }}>
-              <option value="venue">Venue</option>
-              <option value="caterer">Caterer</option>
-              <option value="dj">DJ</option>
-              <option value="photographer">Photographer</option>
+              {categories.map(c => (
+                <option key={c._id} value={c.name}>{c.name}</option>
+              ))}
+              {categories.length === 0 && <option value="">Please add a category first</option>}
             </select>
           </div>
           <div>
             <label className="admin-label">Location</label>
-            <input type="text" name="location" value={formData.location} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+            <MapLocationPicker 
+              locationData={{ address: formData.location, lat: formData.lat, lng: formData.lng }}
+              onChange={({ address, lat, lng }) => setFormData({ ...formData, location: address, lat, lng })}
+            />
           </div>
           <div>
             <label className="admin-label">Price Per Day ($)</label>
@@ -94,6 +116,24 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
           <div>
             <label className="admin-label">Contact Phone Number</label>
             <input type="tel" name="contactDetails" value={formData.contactDetails} onChange={handleChange} required pattern="^\+?[0-9]{10,15}$" title="Please enter a valid phone number (10-15 digits)" className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div>
+              <label className="admin-label">Start Date</label>
+              <input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label className="admin-label">End Date</label>
+              <input type="date" name="endDate" value={formData.endDate} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label className="admin-label">Start Time</label>
+              <input type="time" name="startTime" value={formData.startTime} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label className="admin-label">End Time</label>
+              <input type="time" name="endTime" value={formData.endTime} onChange={handleChange} required className="admin-input" style={{ width: '100%', boxSizing: 'border-box' }} />
+            </div>
           </div>
           <div>
             <label className="admin-label">Image File (Upload)</label>

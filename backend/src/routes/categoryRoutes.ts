@@ -1,15 +1,13 @@
 import { Router } from 'express';
 import { HttpStatus } from '../constants/httpStatus';
 import { 
-  getServices, 
-  createService, 
-  updateService, 
-  deleteService, 
-  getAdminBookings,
-  getDashboardStats
-} from '../controllers/serviceController';
+  getCategories, 
+  createCategory, 
+  updateCategory, 
+  deleteCategory,
+  getPublicCategories 
+} from '../controllers/categoryController';
 import jwt from 'jsonwebtoken';
-import { upload } from '../middleware/upload';
 
 const router = Router();
 
@@ -33,17 +31,16 @@ const providerMiddleware = (req: any, res: any, next: any) => {
   next();
 };
 
+// Public endpoint
+router.get('/public', getPublicCategories);
 
-router.get('/', getServices);
-
-
+// Protected endpoints for provider
 router.use(authMiddleware);
 router.use(providerMiddleware);
 
-router.post('/', upload.single('imageFile'), createService);
-router.put('/:id', upload.single('imageFile'), updateService);
-router.delete('/:id', deleteService);
-router.get('/bookings', getAdminBookings);
-router.get('/dashboard-stats', getDashboardStats);
+router.get('/', getCategories);
+router.post('/', createCategory);
+router.put('/:id', updateCategory);
+router.delete('/:id', deleteCategory);
 
-export { router as serviceRoutes };
+export { router as categoryRoutes };

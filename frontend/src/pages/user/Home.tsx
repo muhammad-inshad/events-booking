@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/axios';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Calendar, Tag } from 'lucide-react';
+import { Search, MapPin, Tag } from 'lucide-react';
+import toast from 'react-hot-toast';
+import LocationAutocomplete from '../../components/LocationAutocomplete';
 
 const Home: React.FC = () => {
   const [services, setServices] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -19,23 +22,36 @@ const Home: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/public/services`, {
-        params: { ...filters, page, limit: 12 }
+      const response = await api.get(`/api/public/services`, {
+        params: { ...filters, page, limit: 8 }
       });
       setServices(response.data.data);
       if (response.data.pagination) {
         setTotalPages(response.data.pagination.totalPages);
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      toast.error('Failed to load services. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get(`/api/categories/public`);
+      setCategories(response.data.data); // This is an array of strings since we used Category.distinct('name')
+    } catch (error) {
+      toast.error('Failed to load categories.');
     }
   };
 
   useEffect(() => {
     fetchServices();
   }, [page]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,44 +68,40 @@ const Home: React.FC = () => {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="hero-section">
-        <h1 className="hero-title">Find the Perfect Vibe for Your Event</h1>
-        <p className="hero-subtitle">Discover top-rated venues, premium caterers, and talented professionals.</p>
-      </section>
+      <div className="hero-wrapper">
+        {/* Hero Section */}
+        <section className="hero-section">
+          <h1 className="hero-title">Find the Perfect Vibe for Your Event</h1>
+          <p className="hero-subtitle">Discover top-rated venues, premium caterers, and talented professionals.</p>
+        </section>
 
-      {/* Filter Bar */}
-      <form className="filter-bar" onSubmit={handleSearch}>
-        <div className="filter-group">
-          <label className="filter-label"><Search size={14} /> Keyword</label>
-          <input type="text" name="keyword" value={filters.keyword} onChange={handleChange} placeholder="e.g. Wedding" className="filter-input" />
-        </div>
-        <div className="filter-group">
-          <label className="filter-label"><Tag size={14} /> Category</label>
-          <select name="category" value={filters.category} onChange={handleChange} className="filter-input">
-            <option value="">All Categories</option>
-            <option value="venue">Venue</option>
-            <option value="caterer">Caterer</option>
-            <option value="dj">DJ</option>
-            <option value="photographer">Photographer</option>
-          </select>
-        </div>
-        <div className="filter-group">
-          <label className="filter-label"><MapPin size={14} /> Location</label>
-          <input type="text" name="location" value={filters.location} onChange={handleChange} placeholder="City or region" className="filter-input" />
-        </div>
-        <div className="filter-group">
-          <label className="filter-label"><Calendar size={14} /> Start Date</label>
-          <input type="date" name="startDate" value={filters.startDate} onChange={handleChange} className="filter-input" />
-        </div>
-        <div className="filter-group">
-          <label className="filter-label"><Calendar size={14} /> End Date</label>
-          <input type="date" name="endDate" value={filters.endDate} onChange={handleChange} className="filter-input" />
-        </div>
-        <div className="filter-group filter-action">
-          <button type="submit" className="user-btn">Search</button>
-        </div>
-      </form>
+        {/* Filter Bar */}
+        <form className="filter-bar" onSubmit={handleSearch}>
+          <div className="filter-group">
+            <label className="filter-label"><Search size={14} style={{ marginRight: '6px' }} /> Keyword</label>
+            <input type="text" name="keyword" value={filters.keyword} onChange={handleChange} placeholder="e.g. Wedding" className="filter-input" />
+          </div>
+          <div className="filter-group">
+            <label className="filter-label"><Tag size={14} style={{ marginRight: '6px' }} /> Category</label>
+            <select name="category" value={filters.category} onChange={handleChange} className="filter-input">
+              <option value="">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label className="filter-label"><MapPin size={14} style={{ marginRight: '6px' }} /> Location</label>
+            <LocationAutocomplete 
+              value={filters.location}
+              onChange={(val) => setFilters({ ...filters, location: val })}
+            />
+          </div>
+
+          <div className="filter-action">
+            <button type="submit" className="user-btn">Search</button>
+          </div>
+        </form>
 
       {/* Service Grid */}
       <section className="service-container">
@@ -161,6 +173,7 @@ const Home: React.FC = () => {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 };

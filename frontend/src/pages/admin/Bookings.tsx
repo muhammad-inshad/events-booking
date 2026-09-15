@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import api from '../../utils/axios';
+import toast from 'react-hot-toast';
 
 const Bookings: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -12,9 +12,7 @@ const Bookings: React.FC = () => {
     const fetchBookings = async () => {
       setLoading(true);
       try {
-        const token = Cookies.get('accessToken');
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/services/bookings`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(`/api/services/bookings`, {
           params: { page, limit: 5 }
         });
         setBookings(response.data.data);
@@ -22,7 +20,7 @@ const Bookings: React.FC = () => {
           setTotalPages(response.data.pagination.totalPages);
         }
       } catch (error) {
-        console.error('Error fetching bookings:', error);
+        toast.error('Error fetching bookings');
       } finally {
         setLoading(false);
       }
@@ -44,6 +42,7 @@ const Bookings: React.FC = () => {
               <th>Service</th>
               <th>User</th>
               <th>Dates</th>
+              <th>Persons</th>
               <th>Total Price</th>
             </tr>
           </thead>
@@ -58,6 +57,7 @@ const Bookings: React.FC = () => {
                 <td>
                   {new Date(booking.startDate).toLocaleDateString()} to {new Date(booking.endDate).toLocaleDateString()}
                 </td>
+                <td>{booking.guests || 1}</td>
                 <td>${booking.totalPrice}</td>
               </tr>
             ))}

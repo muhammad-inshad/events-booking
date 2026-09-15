@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import api from '../../utils/axios';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import ServiceForm from '../../components/admin/ServiceForm';
 
 const ServiceManagement: React.FC = () => {
@@ -10,12 +10,13 @@ const ServiceManagement: React.FC = () => {
   const [editingService, setEditingService] = useState<any>(null);
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchServices = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/services`, {
+      const response = await api.get(`/api/services`, {
         params: { keyword, category, page, limit: 5 }
       });
       setServices(response.data.data);
@@ -26,6 +27,19 @@ const ServiceManagement: React.FC = () => {
       console.error('Error fetching services:', error);
     }
   };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/api/categories');
+      setCategories(response.data.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchServices();
@@ -38,13 +52,11 @@ const ServiceManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this service?')) {
       try {
-        const token = Cookies.get('accessToken');
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/services/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.delete(`/api/services/${id}`);
         fetchServices();
-      } catch (error) {
-        console.error('Error deleting service:', error);
+        toast.success('Service deleted successfully');
+      } catch (err: any) {
+        toast.error(err.response?.data?.message || 'Failed to delete service');
       }
     }
   };
@@ -99,10 +111,9 @@ const ServiceManagement: React.FC = () => {
           style={{ flex: 'none', width: '200px' }}
         >
           <option value="">All Categories</option>
-          <option value="venue">Venue</option>
-          <option value="caterer">Caterer</option>
-          <option value="dj">DJ</option>
-          <option value="photographer">Photographer</option>
+          {categories.map(c => (
+            <option key={c._id} value={c.name}>{c.name}</option>
+          ))}
         </select>
       </div>
 
