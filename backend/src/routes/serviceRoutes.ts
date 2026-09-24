@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { HttpStatus } from '../constants/httpStatus';
+import { authenticate, authorize } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+import { createServiceSchema, serviceIdParamSchema } from '../dto/service.schema';
 import { 
   getServices, 
   createService, 
@@ -8,41 +10,20 @@ import {
   getAdminBookings,
   getDashboardStats
 } from '../controllers/serviceController';
-import jwt from 'jsonwebtoken';
 import { upload } from '../middleware/upload';
 
 const router = Router();
 
-const authMiddleware = (req: any, res: any, next: any) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No token provided' });
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Invalid token' });
-  }
-};
-
-const providerMiddleware = (req: any, res: any, next: any) => {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'event_owner') {
-    return res.status(HttpStatus.FORBIDDEN).json({ message: 'Event Owner or Admin access required' });
-  }
-  next();
-};
-
-
+// Public endpoint
 router.get('/', getServices);
 
+// Protected endpoints for provider
+router.use(authenticate);
+router.use(authorize('admin', 'event_owner'));
 
-router.use(authMiddleware);
-router.use(providerMiddleware);
-
-router.post('/', upload.single('imageFile'), createService);
+router.post('/', upload.single('imageFile'), validate(createServiceSchema), createService);
 router.put('/:id', upload.single('imageFile'), updateService);
-router.delete('/:id', deleteService);
+router.delete('/:id', validate(serviceIdParamSchema), deleteService);
 router.get('/bookings', getAdminBookings);
 router.get('/dashboard-stats', getDashboardStats);
 

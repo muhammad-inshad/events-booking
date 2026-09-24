@@ -28,13 +28,13 @@ export class AuthService implements IAuthService {
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET!,
       { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any } as jwt.SignOptions
     );
 
     const refreshToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret',
+      process.env.JWT_REFRESH_SECRET!,
       { expiresIn: '7d' }
     );
 
@@ -48,7 +48,7 @@ export class AuthService implements IAuthService {
   }
 
   async register(dto: RegisterDTO) {
-    const { email, password, name, role } = dto;
+    const { email, password, name } = dto;
     if (!email || !password || !name) {
       throw new AppError('Please provide name, email, and password', HttpStatus.BAD_REQUEST);
     }
@@ -58,21 +58,21 @@ export class AuthService implements IAuthService {
       throw new AppError('Email is already in use', HttpStatus.BAD_REQUEST);
     }
 
-    const userData: any = { name, email, password };
-    if (role) userData.role = role;
+    // Force role to 'user' — admin/event_owner roles must be assigned by an admin
+    const userData: any = { name, email, password, role: 'user' };
 
     const user = await this.userRepository.create(userData);
     
     // Generate JWT token
     const token = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET!,
       { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any } as jwt.SignOptions
     );
 
     const refreshToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret',
+      process.env.JWT_REFRESH_SECRET!,
       { expiresIn: '7d' }
     );
 
@@ -92,7 +92,7 @@ export class AuthService implements IAuthService {
 
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret');
+      decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!);
     } catch (error) {
       throw new AppError('Invalid refresh token', HttpStatus.UNAUTHORIZED);
     }
@@ -108,13 +108,13 @@ export class AuthService implements IAuthService {
 
     const newAccessToken = jwt.sign(
       { id: user._id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET!,
       { expiresIn: (process.env.JWT_EXPIRES_IN || '15m') as any } as jwt.SignOptions
     );
 
     const newRefreshToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_REFRESH_SECRET || 'fallback_refresh_secret',
+      process.env.JWT_REFRESH_SECRET!,
       { expiresIn: '7d' }
     );
 

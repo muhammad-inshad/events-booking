@@ -36,13 +36,13 @@ function App() {
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <Routes>
-        {/* Auth Routes (unauthenticated users only) */}
+    
         <Route element={<ProtectedRoute isAuthRoute={true} />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Route>
 
-        {/* Provider / Admin Routes */}
+      
         <Route element={<ProtectedRoute allowedRoles={['admin', 'event_owner']} />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<Dashboard />} />
@@ -52,7 +52,6 @@ function App() {
           </Route>
         </Route>
 
-        {/* Super Admin Only Routes */}
         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin/users" element={<EventOwnerManagement />} />

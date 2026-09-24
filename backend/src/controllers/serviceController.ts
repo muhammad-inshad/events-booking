@@ -6,6 +6,9 @@ import { Booking } from '../models/Booking';
 import { AppError } from '../errors/AppError';
 import cloudinary from '../config/cloudinary';
 
+// Escape special regex characters to prevent ReDoS
+const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const uploadToCloudinary = (buffer: Buffer): Promise<string> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -26,7 +29,7 @@ export const getServices = async (req: Request, res: Response) => {
     let query: any = {};
 
     if (keyword) {
-      query.title = { $regex: keyword, $options: 'i' };
+      query.title = { $regex: escapeRegex(keyword as string), $options: 'i' };
     }
     
     if (category) {

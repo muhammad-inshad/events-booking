@@ -30,9 +30,14 @@ export const errorHandler = (
     console.error('ERROR 💥:', err);
   }
 
+  // In production, hide internal error details for non-operational errors
+  const safeMessage = (process.env.NODE_ENV === 'production' && !(err instanceof AppError))
+    ? 'Something went wrong'
+    : message;
+
   res.status(statusCode).json({
     success: false,
-    message,
+    message: safeMessage,
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };

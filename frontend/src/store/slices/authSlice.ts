@@ -45,9 +45,17 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.status = 'succeeded';
       
-      Cookies.set('accessToken', action.payload.accessToken, { expires: 1 });
+      Cookies.set('accessToken', action.payload.accessToken, {
+        expires: 1,
+        secure: window.location.protocol === 'https:',
+        sameSite: 'strict',
+      });
       if (action.payload.refreshToken) {
-        Cookies.set('refreshToken', action.payload.refreshToken, { expires: 7 });
+        Cookies.set('refreshToken', action.payload.refreshToken, {
+          expires: 7,
+          secure: window.location.protocol === 'https:',
+          sameSite: 'strict',
+        });
       }
     },
     logout: (state) => {

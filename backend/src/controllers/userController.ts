@@ -10,12 +10,15 @@ export const createUserBooking = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     if (!userId) throw new AppError('Unauthorized', HttpStatus.UNAUTHORIZED);
 
-    const { serviceId, startDate, endDate, totalPrice, guests } = req.body;
+    const { serviceId, startDate, endDate, guests } = req.body;
 
     const sDate = new Date(startDate);
     const eDate = new Date(endDate);
 
-    
+    if (sDate >= eDate) {
+      throw new AppError('End date must be after start date', HttpStatus.BAD_REQUEST);
+    }
+
     const service = await Service.findById(serviceId);
     if (!service) throw new AppError('Service not found', HttpStatus.NOT_FOUND);
 
@@ -30,13 +33,18 @@ export const createUserBooking = async (req: Request, res: Response) => {
       throw new AppError('Service is already booked for these dates', HttpStatus.BAD_REQUEST);
     }
 
+    // Calculate price server-side to prevent price manipulation
+    const days = Math.max(1, Math.ceil((eDate.getTime() - sDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const guestCount = guests || 1;
+    const totalPrice = days * service.pricePerDay;
+
     const booking = await Booking.create({
       userId,
       serviceId,
       startDate: sDate,
       endDate: eDate,
       totalPrice,
-      guests: guests || 1
+      guests: guestCount
     });
 
     res.status(HttpStatus.CREATED).json({ status: 'success', data: booking });

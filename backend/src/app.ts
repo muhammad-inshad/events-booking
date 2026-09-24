@@ -6,17 +6,28 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler';
 import { AppError } from './errors/AppError';
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
+import { globalLimiter } from './middleware/rateLimiter';
 
 const app: Application = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+// Body size limits to prevent DoS
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// CORS — restrict origins
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
+
+// Rate limiting
+app.use('/api/', globalLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -38,8 +49,13 @@ app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 
-const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Swagger — development only
+if (process.env.NODE_ENV === 'development') {
+  const swaggerUi = require('swagger-ui-express');
+  const YAML = require('yamljs');
+  const swaggerDocument = YAML.load(path.join(__dirname, 'swagger.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
 
 app.get('/health', (req: Request, res: Response) => {
   res.status(HttpStatus.OK).json({ success: true, message: 'Server is healthy' });
