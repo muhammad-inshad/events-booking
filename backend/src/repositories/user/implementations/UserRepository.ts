@@ -12,7 +12,7 @@ export class UserRepository extends BaseRepository<IUser> implements IUserReposi
   }
 
   async findByEmailWithPassword(email: string): Promise<IUser | null> {
-    // Select the password field which is normally excluded
+   
     return await this._model.findOne({ email }).select('+password').exec();
   }
 }

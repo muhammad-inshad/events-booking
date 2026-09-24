@@ -6,7 +6,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler';
 import { AppError } from './errors/AppError';
-import { globalLimiter } from './middleware/rateLimiter';
 
 const app: Application = express();
 
@@ -25,9 +24,6 @@ app.use(cors({
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
-
-// Rate limiting
-app.use('/api/', globalLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

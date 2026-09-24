@@ -27,7 +27,7 @@ export const errorHandler = (
 
   // Log error in development or if it's not operational
   if (process.env.NODE_ENV === 'development' || !(err instanceof AppError) || !err.isOperational) {
-    console.error('ERROR 💥:', err);
+    console.error('ERROR :', err);
   }
 
   // In production, hide internal error details for non-operational errors
