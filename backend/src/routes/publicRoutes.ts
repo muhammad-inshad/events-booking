@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { getPublicServices, getPublicServiceById, getServiceCategories } from '../controllers/publicController';
+import { publicContainer } from '../di/public.di';
 
 const router = Router();
+const { publicController } = publicContainer();
 
-router.get('/services/categories', getServiceCategories);
-router.get('/services', getPublicServices);
-router.get('/services/:id', getPublicServiceById);
+router.get('/services/categories', publicController.getServiceCategories);
+router.get('/services', publicController.getPublicServices);
+router.get('/services/:id', publicController.getPublicServiceById);
 
 export { router as publicRoutes };

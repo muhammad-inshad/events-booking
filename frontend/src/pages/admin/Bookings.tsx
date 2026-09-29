@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/axios';
+import { bookingService } from '../../service/bookingService';
 import toast from 'react-hot-toast';
+import type { Booking, BookingServiceRef, BookingUserRef } from '../../types/models';
 
 const Bookings: React.FC = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -12,13 +13,9 @@ const Bookings: React.FC = () => {
     const fetchBookings = async () => {
       setLoading(true);
       try {
-        const response = await api.get(`/api/services/bookings`, {
-          params: { page, limit: 5 }
-        });
-        setBookings(response.data.data);
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.totalPages);
-        }
+        const result = await bookingService.getProviderBookings({ page, limit: 5 });
+        setBookings(result.data);
+        setTotalPages(result.pagination.totalPages);
       } catch (error) {
         toast.error('Error fetching bookings');
       } finally {
@@ -47,20 +44,26 @@ const Bookings: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {bookings.map(booking => (
-              <tr key={booking._id}>
-                <td>{booking.serviceId?.title || 'Unknown'}</td>
-                <td>
-                  {booking.userId?.name} <br/>
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{booking.userId?.email}</span>
-                </td>
-                <td>
-                  {new Date(booking.startDate).toLocaleDateString()} to {new Date(booking.endDate).toLocaleDateString()}
-                </td>
-                <td>{booking.guests || 1}</td>
-                <td>${booking.totalPrice}</td>
-              </tr>
-            ))}
+            {bookings.map(booking => {
+              const service: BookingServiceRef | null =
+                typeof booking.serviceId === 'string' ? null : booking.serviceId;
+              const bookingUser: BookingUserRef | null =
+                typeof booking.userId === 'string' ? null : booking.userId;
+              return (
+                <tr key={booking._id}>
+                  <td>{service?.title || 'Unknown'}</td>
+                  <td>
+                    {bookingUser?.name} <br/>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{bookingUser?.email}</span>
+                  </td>
+                  <td>
+                    {new Date(booking.startDate).toLocaleDateString()} to {new Date(booking.endDate).toLocaleDateString()}
+                  </td>
+                  <td>{booking.guests || 1}</td>
+                  <td>${booking.totalPrice}</td>
+                </tr>
+              );
+            })}
             {bookings.length === 0 && (
               <tr>
                 <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No bookings found for your services.</td>

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/axios';
+import { publicService } from '../../service/publicService';
+import { categoryService } from '../../service/categoryService';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LocationAutocomplete from '../../components/LocationAutocomplete';
+import type { Service } from '../../types/models';
 
 const Home: React.FC = () => {
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -23,13 +25,9 @@ const Home: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/api/public/services`, {
-        params: { ...filters, page, limit: 8 }
-      });
-      setServices(response.data.data);
-      if (response.data.pagination) {
-        setTotalPages(response.data.pagination.totalPages);
-      }
+      const result = await publicService.getPublicServices({ ...filters, page, limit: 8 });
+      setServices(result.data);
+      setTotalPages(result.pagination.totalPages);
     } catch (error) {
       toast.error('Failed to load services. Please try again.');
     } finally {
@@ -39,8 +37,8 @@ const Home: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get(`/api/categories/public`);
-      setCategories(response.data.data); // This is an array of strings since we used Category.distinct('name')
+      const categoryNames = await categoryService.getPublicCategories();
+      setCategories(categoryNames);
     } catch (error) {
       toast.error('Failed to load categories.');
     }

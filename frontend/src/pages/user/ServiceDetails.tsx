@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/axios';
+import axios from 'axios';
+import { publicService } from '../../service/publicService';
+import { bookingService } from '../../service/bookingService';
 import { useParams, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import { MapPin, Tag, Phone, Info } from 'lucide-react';
 import { calculateTotalPrice } from '../../utils/priceCalculator';
 import toast from 'react-hot-toast';
+import type { Service } from '../../types/models';
 
 const ServiceDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [service, setService] = useState<any>(null);
+  const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   
   // Booking state
@@ -19,10 +22,10 @@ const ServiceDetails: React.FC = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
 
   useEffect(() => {
+    if (!id) return;
     const fetchService = async () => {
       try {
-        const response = await api.get(`/api/public/services/${id}`);
-        const fetchedService = response.data.data;
+        const fetchedService = await publicService.getPublicServiceById(id);
         setService(fetchedService);
         if (fetchedService.startDate && fetchedService.endDate) {
           setStartDate(fetchedService.startDate.split('T')[0]);
@@ -38,6 +41,7 @@ const ServiceDetails: React.FC = () => {
   }, [id]);
 
   const handleBook = async () => {
+    if (!service) return;
     if (!startDate || !endDate) {
       toast.error('Please select both start and end dates.');
       return;
@@ -64,7 +68,7 @@ const ServiceDetails: React.FC = () => {
 
       const totalPrice = calculateTotalPrice(service.pricePerDay, startDate, endDate) * guests;
 
-      await api.post(`/api/user/bookings`, {
+      await bookingService.createBooking({
         serviceId: service._id,
         startDate,
         endDate,
@@ -76,8 +80,9 @@ const ServiceDetails: React.FC = () => {
       setTimeout(() => {
         navigate('/my-bookings');
       }, 1500);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Booking failed');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message ?? err.message : 'Booking failed';
+      toast.error(message);
     } finally {
       setBookingLoading(false);
     }

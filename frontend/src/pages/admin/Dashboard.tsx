@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
-import api from '../../utils/axios';
+import { bookingService } from '../../service/bookingService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { DashboardStatPoint } from '../../types/models';
 
 const Dashboard: React.FC = () => {
   const { user } = useAppSelector(state => state.auth);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<DashboardStatPoint[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await api.get('/api/services/dashboard-stats');
-        setData(res.data.data);
+        const stats = await bookingService.getDashboardStats();
+        setData(stats);
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);
       } finally {

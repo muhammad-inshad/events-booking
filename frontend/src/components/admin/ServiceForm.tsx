@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/axios';
+import axios from 'axios';
+import { serviceService } from '../../service/serviceService';
+import { categoryService } from '../../service/categoryService';
 import toast from 'react-hot-toast';
 import MapLocationPicker from '../MapLocationPicker';
+import type { Category, Service } from '../../types/models';
 
 interface ServiceFormProps {
-  initialData?: any;
+  initialData?: Service | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -27,15 +30,15 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
   });
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await api.get('/api/categories');
-        setCategories(res.data.data);
-        if (!initialData?.category && res.data.data.length > 0) {
-          setFormData(prev => ({ ...prev, category: res.data.data[0].name }));
+        const result = await categoryService.getCategories();
+        setCategories(result);
+        if (!initialData?.category && result.length > 0) {
+          setFormData(prev => ({ ...prev, category: result[0].name }));
         }
       } catch (err) {
         console.error('Failed to fetch categories', err);
@@ -49,28 +52,30 @@ const ServiceForm: React.FC<ServiceFormProps> = ({ initialData, onClose, onSucce
     setLoading(true);
 
     try {
-      let payload: any = formData;
+      let payload: FormData | typeof formData = formData;
 
       if (imageFile) {
-        payload = new FormData();
-        Object.keys(formData).forEach(key => {
+        const formPayload = new FormData();
+        (Object.keys(formData) as Array<keyof typeof formData>).forEach((key) => {
           if (key !== 'imageUrl') {
-            payload.append(key, (formData as any)[key]);
+            formPayload.append(key, String(formData[key]));
           }
         });
-        payload.append('imageFile', imageFile);
+        formPayload.append('imageFile', imageFile);
+        payload = formPayload;
       }
 
       if (initialData) {
-        await api.put(`/api/services/${initialData._id}`, payload);
+        await serviceService.updateService(initialData._id, payload);
         toast.success('Service updated successfully');
       } else {
-        await api.post(`/api/services`, payload);
+        await serviceService.createService(payload);
         toast.success('Service created successfully');
       }
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'Something went wrong');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message ?? err.message : 'Something went wrong';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

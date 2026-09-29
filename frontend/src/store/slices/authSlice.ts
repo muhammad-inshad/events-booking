@@ -1,13 +1,10 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
 import Cookies from 'js-cookie';
-import api from '../../utils/axios';
+import { userService } from '../../service/userService';
+import type { AuthUser } from '../../types/models';
 
-export interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+export type User = AuthUser;
 
 export interface AuthState {
   user: User | null;
@@ -25,10 +22,12 @@ export const fetchCurrentUser = createAsyncThunk(
   'auth/fetchCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/api/user/me');
-      return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user');
+      return await userService.getCurrentUser();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message ?? 'Failed to fetch user'
+        : 'Failed to fetch user';
+      return rejectWithValue(message);
     }
   }
 );

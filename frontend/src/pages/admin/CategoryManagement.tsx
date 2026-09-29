@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../utils/axios';
+import axios from 'axios';
+import { categoryService } from '../../service/categoryService';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import type { Category } from '../../types/models';
 
 const CategoryManagement: React.FC = () => {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -13,10 +15,11 @@ const CategoryManagement: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/api/categories');
-      setCategories(res.data.data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error fetching categories');
+      const result = await categoryService.getCategories();
+      setCategories(result);
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Error fetching categories');
     } finally {
       setLoading(false);
     }
@@ -28,18 +31,19 @@ const CategoryManagement: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-   
+
     try {
       if (name == "") {
-     
-        return toast.error('Please enter a category name'); 
+
+        return toast.error('Please enter a category name');
       }
-      await api.post('/api/categories', { name });
+      await categoryService.createCategory({ name });
       setName('');
       fetchCategories();
       toast.success('Category created successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create category');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Failed to create category');
     }
   };
 
@@ -47,24 +51,26 @@ const CategoryManagement: React.FC = () => {
     e.preventDefault();
     if (!editName.trim() || !editingId) return;
     try {
-      await api.put(`/api/categories/${editingId}`, { name: editName });
+      await categoryService.updateCategory(editingId, { name: editName });
       setEditingId(null);
       setEditName('');
       fetchCategories();
       toast.success('Category updated successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update category');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Failed to update category');
     }
   };
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
-        await api.delete(`/api/categories/${id}`);
+        await categoryService.deleteCategory(id);
         fetchCategories();
         toast.success('Category deleted successfully');
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to delete category');
+      } catch (err) {
+        const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+        toast.error(message ?? 'Failed to delete category');
       }
     }
   };

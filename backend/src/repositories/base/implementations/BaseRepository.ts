@@ -1,4 +1,4 @@
-import { Model, Document } from 'mongoose';
+import { Model, Document, UpdateQuery } from 'mongoose';
 import { IBaseRepository } from '../interfaces/IBaseRepository';
 
 export class BaseRepository<T extends Document> implements IBaseRepository<T> {
@@ -14,7 +14,9 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   }
 
   async update(id: string, item: Partial<T>): Promise<T | null> {
-    return await this._model.findByIdAndUpdate(id, item as any, { new: true }).exec();
+    return await this._model
+      .findByIdAndUpdate(id, item as UpdateQuery<T>, { new: true, runValidators: true })
+      .exec();
   }
 
   async delete(id: string): Promise<boolean> {

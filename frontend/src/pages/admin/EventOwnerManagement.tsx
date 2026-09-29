@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../utils/axios';
+import axios from 'axios';
+import { adminService } from '../../service/adminService';
 import { Shield, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import type { AdminUser, UserRole } from '../../types/models';
 
 const EventOwnerManagement: React.FC = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/api/admin/users');
-      setUsers(res.data.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error fetching users');
+      const result = await adminService.getUsers();
+      setUsers(result);
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      setError(message ?? 'Error fetching users');
     } finally {
       setLoading(false);
     }
@@ -23,24 +26,26 @@ const EventOwnerManagement: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
-      await api.put(`/api/admin/users/${userId}/role`, { role: newRole });
+      await adminService.updateUserRole(userId, { role: newRole });
       fetchUsers();
       toast.success('Role updated successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update role');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Failed to update role');
     }
   };
 
   const handleBlockToggle = async (userId: string, currentStatus: boolean) => {
     try {
       const isBlocked = !currentStatus;
-      await api.put(`/api/admin/users/${userId}/block`, { isBlocked });
+      await adminService.toggleUserBlock(userId, { isBlocked });
       fetchUsers();
       toast.success(isBlocked ? 'User blocked successfully' : 'User unblocked successfully');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update block status');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Failed to update block status');
     }
   };
 
@@ -106,7 +111,7 @@ const EventOwnerManagement: React.FC = () => {
                       {user.role !== 'admin' && (
                         <select 
                           value={user.role}
-                          onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                          onChange={(e) => handleRoleChange(user._id, e.target.value as UserRole)}
                           style={{ padding: '6px', borderRadius: '4px', backgroundColor: '#fff', color: '#333', border: '1px solid #ccc', cursor: 'pointer' }}
                         >
                           <option value="user">User</option>

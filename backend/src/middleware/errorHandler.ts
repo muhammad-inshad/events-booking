@@ -17,6 +17,9 @@ export const errorHandler = (
   } else if (err.name === 'ValidationError') {
     statusCode = HttpStatus.BAD_REQUEST;
     message = err.message;
+  } else if (err.name === 'CastError') {
+    statusCode = HttpStatus.NOT_FOUND;
+    message = 'Resource not found';
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = HttpStatus.UNAUTHORIZED;
     message = 'Invalid token. Please log in again.';

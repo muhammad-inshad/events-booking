@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import api from '../../utils/axios';
+import { bookingService } from '../../service/bookingService';
 import { Link } from 'react-router-dom';
+import type { Booking, BookingServiceRef } from '../../types/models';
 
 const MyBookings: React.FC = () => {
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await api.get(`/api/user/bookings`);
-        setBookings(response.data.data);
+        const result = await bookingService.getMyBookings();
+        setBookings(result);
       } catch (error) {
         console.error('Error fetching bookings:', error);
       } finally {
@@ -49,15 +50,17 @@ const MyBookings: React.FC = () => {
             <tbody>
               {bookings.map(booking => {
                 const isPast = new Date(booking.endDate) < new Date();
+                const service: BookingServiceRef | null =
+                  typeof booking.serviceId === 'string' ? null : booking.serviceId;
                 return (
                   <tr key={booking._id}>
                     <td style={{ fontWeight: 600 }}>
-                      <Link to={`/service/${booking.serviceId?._id}`} style={{ color: 'var(--user-text)', textDecoration: 'none' }}>
-                        {booking.serviceId?.title || 'Unknown Service'}
+                      <Link to={`/service/${service?._id}`} style={{ color: 'var(--user-text)', textDecoration: 'none' }}>
+                        {service?.title || 'Unknown Service'}
                       </Link>
                     </td>
-                    <td style={{ textTransform: 'capitalize' }}>{booking.serviceId?.category}</td>
-                    <td>{booking.serviceId?.location}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{service?.category}</td>
+                    <td>{service?.location}</td>
                     <td>
                       <div style={{ fontSize: '0.9rem' }}>{new Date(booking.startDate).toLocaleDateString()}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--user-text-muted)' }}>to {new Date(booking.endDate).toLocaleDateString()}</div>

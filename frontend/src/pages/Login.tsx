@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
-import api from '../utils/axios';
+import { authService } from '../service/authService';
 import { useAppDispatch } from '../store/hooks';
 import { setCredentials } from '../store/slices/authSlice';
 import toast from 'react-hot-toast';
@@ -19,27 +20,22 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await api.post(`/api/auth/login`, {
-        email,
-        password
-      });
+      const { user, token, refreshToken } = await authService.login({ email, password });
 
-      dispatch(setCredentials({
-        user: response.data.data.user,
-        accessToken: response.data.data.token,
-        refreshToken: response.data.data.refreshToken
-      }));
+      dispatch(setCredentials({ user, accessToken: token, refreshToken }));
 
       toast.success('Successfully logged in!');
-      const userRole = response.data.data.user.role;
 
-      if (userRole === 'admin' || userRole === 'event_owner') {
+      if (user.role === 'admin' || user.role === 'event_owner') {
         navigate('/admin/dashboard');
       } else {
         navigate('/');
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || err.message || 'An unexpected error occurred');
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message ?? err.message
+        : 'An unexpected error occurred';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

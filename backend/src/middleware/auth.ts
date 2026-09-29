@@ -42,8 +42,8 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
     req.user = { id: String(user._id), role: user.role };
     next();
-  } catch (err: any) {
-    if (err.name === 'TokenExpiredError') {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TokenExpiredError') {
       return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Token expired. Please log in again.' });
     }
     return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'Invalid token' });

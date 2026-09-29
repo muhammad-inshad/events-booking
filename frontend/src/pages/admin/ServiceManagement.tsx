@@ -1,28 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/axios';
+import axios from 'axios';
+import { serviceService } from '../../service/serviceService';
+import { categoryService } from '../../service/categoryService';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ServiceForm from '../../components/admin/ServiceForm';
+import type { Category, Service } from '../../types/models';
 
 const ServiceManagement: React.FC = () => {
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('');
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchServices = async () => {
     try {
-      const response = await api.get(`/api/services`, {
-        params: { keyword, category, page, limit: 5 }
-      });
-      setServices(response.data.data);
-      if (response.data.pagination) {
-        setTotalPages(response.data.pagination.totalPages);
-      }
+      const result = await serviceService.getServices({ keyword, category, page, limit: 5 });
+      setServices(result.data);
+      setTotalPages(result.pagination.totalPages);
     } catch (error) {
       console.error('Error fetching services:', error);
     }
@@ -30,8 +29,8 @@ const ServiceManagement: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/api/categories');
-      setCategories(response.data.data);
+      const result = await categoryService.getCategories();
+      setCategories(result);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -52,16 +51,17 @@ const ServiceManagement: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this service?')) {
       try {
-        await api.delete(`/api/services/${id}`);
+        await serviceService.deleteService(id);
         fetchServices();
         toast.success('Service deleted successfully');
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to delete service');
+      } catch (err) {
+        const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+        toast.error(message ?? 'Failed to delete service');
       }
     }
   };
 
-  const handleEdit = (service: any) => {
+  const handleEdit = (service: Service) => {
     setEditingService(service);
     setIsFormOpen(true);
   };

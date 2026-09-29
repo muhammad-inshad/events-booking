@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
-import api from '../utils/axios';
+import { authService } from '../service/authService';
 import './Auth.css';
 
 const Register: React.FC = () => {
@@ -18,7 +19,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      await api.post(`/api/auth/register`, {
+      await authService.register({
         name,
         email,
         password,
@@ -26,8 +27,9 @@ const Register: React.FC = () => {
       });
       toast.success('Registration successful! Please login.');
       navigate('/login');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      toast.error(message ?? 'Registration failed');
     } finally {
       setLoading(false);
     }
